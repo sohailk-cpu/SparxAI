@@ -1,1 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SunoAi - Groq Chatbot</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>SunoAi - Groq Voice Chatbot</h1>
+        <div id="chat-box" class="chat-box"></div>
+        <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off" />
+    </div>
 
+ <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const message = userInput.value.trim();
+                if (message === '') return;
+
+                const userDiv = document.createElement('div');
+                userDiv.className = 'user';
+                userDiv.textContent = '🧑‍💻: ' + message;
+                chatBox.appendChild(userDiv);
+
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    const botDiv = document.createElement('div');
+                    botDiv.className = 'bot';
+                    botDiv.textContent = '🤖: ' + data.response;
+                    chatBox.appendChild(botDiv);
+                    speakText(data.response);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                });
+
+                userInput.value = '';
+            }
+        });
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                speechSynthesis.speak(utterance);
+            }
+        }
+    </script>
+</body>
+</html>
