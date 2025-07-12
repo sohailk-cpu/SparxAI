@@ -8,50 +8,73 @@
 <body>
     <div class="container">
         <h1>SunoAi</h1>
-        <div id="chat-box" class="chat-box"></div>
-        <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off" />
+        <div class="chat-container">
+            <div id="chat-box" class="chat-box"></div>
+            <input type="text" class="chat-input" placeholder="Type your message...">
+            <button id="mic-btn">🎤 Speak</button>
+        </div>
     </div>
+<script>
+    const chatInput = document.querySelector('.chat-input');
+    const chatBox = document.getElementById('chat-box');
+    const micBtn = document.getElementById('mic-btn');
 
- <script>
-        const chatBox = document.getElementById('chat-box');
-        const userInput = document.getElementById('user-input');
+    chatInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            sendMessage(chatInput.value.trim());
+        }
+    });
 
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const message = userInput.value.trim();
-                if (message === '') return;
+    micBtn.addEventListener("click", () => {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = "hi-IN";
+        recognition.start();
+        micBtn.textContent = "🎙️ Listening...";
+        recognition.onresult = function (event) {
+            const text = event.results[0][0].transcript;
+            chatInput.value = text;
+            sendMessage(text);
+            micBtn.textContent = "🎤 Speak";
+        };
+        recognition.onerror = function () {
+            micBtn.textContent = "🎤 Speak";
+        };
+    });
 
-                const userDiv = document.createElement('div');
-                userDiv.className = 'user';
-                userDiv.textContent = '🧑‍💻: ' + message;
-                chatBox.appendChild(userDiv);
+    function sendMessage(message) {
+        if (message === '') return;
+        const userDiv = document.createElement('div');
+        userDiv.className = 'user';
+        userDiv.textContent = "🧑: " + message;
+        chatBox.appendChild(userDiv);
 
-                fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    const botDiv = document.createElement('div');
-                    botDiv.className = 'bot';
-                    botDiv.textContent = '🤖: ' + data.response;
-                    chatBox.appendChild(botDiv);
-                    speakText(data.response);
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                });
-
-                userInput.value = '';
-            }
+        fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const botDiv = document.createElement('div');
+            botDiv.className = 'bot';
+            botDiv.textContent = "🤖: " + data.response;
+            chatBox.appendChild(botDiv);
+            speakText(data.response);
+            chatBox.scrollTop = chatBox.scrollHeight;
         });
 
-        function speakText(text) {
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
-                speechSynthesis.speak(utterance);
-            }
-        }
-    </script>
+        chatInput.value = '';
+    }
+
+    function speakText(text) {
+        const synth = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "hi-IN";
+        const voices = synth.getVoices();
+        const hindiVoice = voices.find(voice => voice.lang === 'hi-IN');
+        if (hindiVoice) utterance.voice = hindiVoice;
+        synth.speak(utterance);
+    }
+</script>
 </body>
 </html>
