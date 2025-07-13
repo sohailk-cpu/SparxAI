@@ -47,6 +47,10 @@ user_memory = {}
 def home():
     return render_template('index.html')
 
+@app.route('/voice')
+def voice_chat():
+    return render_template('voice.html')
+
 @app.route('/login', methods=['GET'])
 def login_page():
     return render_template('login.html')
@@ -105,11 +109,11 @@ def get_groq_response(message, user_id):
 
     data = {
         "model": "llama3-8b-8192",
-        "messages": [{"role": "system", "content": "You are SparxAI, a helpful assistant created by Sohail."}] + memory[-5:]
+        "messages": [{"role": "system", "content": "You are TalkGPT, a helpful assistant created by Sohail."}] + memory[-5:]
     }
 
     try:
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(url, headers=headers, json=data, timeout=10)
         result = response.json()
         print("🔍 Groq response:", result)
 
