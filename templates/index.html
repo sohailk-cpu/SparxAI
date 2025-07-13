@@ -1,80 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>SunoAi</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <title>SparxAI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>SunoAi</h1>
-        <div class="chat-container">
-            <div id="chat-box" class="chat-box"></div>
-            <input type="text" class="chat-input" placeholder="Type your message...">
-            <button id="mic-btn">🎤 Speak</button>
-        </div>
+  <h1>SparxAI</h1>
+  <p style="color: #ccc;">Try asking: "aaj kya din hai" or anything...</p>
+
+  <div class="chat-area">
+    <div class="chat-response">Hello! How can I assist you?</div>
+    <input type="text" id="chat-input" placeholder="Type your message..." />
+    <button onclick="send()">Send</button>
+  </div>
+
+<div class="mic-wrapper">
+      <div class="mic-glow" onclick="startMic()" style="cursor: pointer;">
+        <img src="/static/mic.svg" alt="Mic" class="mic-icon"/>
+      </div>
     </div>
-<script>
-    const chatInput = document.querySelector('.chat-input');
-    const chatBox = document.getElementById('chat-box');
-    const micBtn = document.getElementById('mic-btn');
+  </div>
 
-    chatInput.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            sendMessage(chatInput.value.trim());
-        }
-    });
+  <a href="/login" style="color:#00f4ff; text-decoration: underline; display:block; margin-top:20px;">Login to Save Chat History</a>
+  <a href="/history" style="color:#00f4ff; text-decoration: underline;">View My Chat History</a>
 
-    micBtn.addEventListener("click", () => {
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = "hi-IN";
-        recognition.start();
-        micBtn.textContent = "🎙️ Listening...";
-        recognition.onresult = function (event) {
-            const text = event.results[0][0].transcript;
-            chatInput.value = text;
-            sendMessage(text);
-            micBtn.textContent = "🎤 Speak";
-        };
-        recognition.onerror = function () {
-            micBtn.textContent = "🎤 Speak";
-        };
-    });
-
-    function sendMessage(message) {
-        if (message === '') return;
-        const userDiv = document.createElement('div');
-        userDiv.className = 'user';
-        userDiv.textContent = "🧑: " + message;
-        chatBox.appendChild(userDiv);
-
-        fetch("/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message })
-        })
-        .then(res => res.json())
-        .then(data => {
-            const botDiv = document.createElement('div');
-            botDiv.className = 'bot';
-            botDiv.textContent = "🤖: " + data.response;
-            chatBox.appendChild(botDiv);
-            speakText(data.response);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
-
-        chatInput.value = '';
-    }
-
-    function speakText(text) {
-        const synth = window.speechSynthesis;
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "hi-IN";
-        const voices = synth.getVoices();
-        const hindiVoice = voices.find(voice => voice.lang === 'hi-IN');
-        if (hindiVoice) utterance.voice = hindiVoice;
-        synth.speak(utterance);
-    }
-</script>
+  <script src="/static/script.js"></script>
 </body>
 </html>
