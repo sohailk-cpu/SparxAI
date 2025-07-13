@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TalkGPT Voice Mode</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h2>🎙️ TalkGPT Voice Mode</h2>
+  <p>Speak your question and AI will respond by voice.</p>
+
+  <!-- 🎤 Mic area -->
+  <div class="mic-wrapper" onclick="startVoiceChat()">
+    <img src="/static/images/mic-icon.png" class="mic-icon" alt="Mic">
+  </div>
+  <p style="color: #aefeff; margin-top: 10px; font-size: 16px;">Tap to Talk</p>
+
+  <!-- 📥 AI reply -->
+  <div class="chat-response" id="responseBox">AI response will appear here...</div>
+
+  <script>
+    function startVoiceChat() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "hi-IN";
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const userInput = event.results[0][0].transcript;
+        fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userInput })
+        })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("responseBox").textContent = data.response;
+          speak(data.response);
+        });
+      };
+    }
+
+    function speak(text) {
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'hi-IN';
+      synth.speak(utterance);
+    }
+  </script>
+</body>
+</html>
