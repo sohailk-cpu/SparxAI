@@ -1,37 +1,113 @@
 body {
-    font-family: Arial, sans-serif;
-    background: #0f0f0f;
-    color: #f2f2f2;
-    margin: 0;
-    padding: 0;
+  background: radial-gradient(circle at center, #0d0f1a 0%, #02050a 100%);
+  font-family: 'Segoe UI', sans-serif;
+  color: #aefeff;
+  margin: 0;
+  padding: 0;
+  text-align: center;
 }
+
 .container {
-    width: 90%;
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 20px;
-    background-color: #1e1e1e;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  padding-top: 60px;
+  padding-left: 15px;
+  padding-right: 15px;
 }
-h1 {
-    text-align: center;
-    color: #00ffc3;
+
+.header h1 {
+  font-size: 36px;
+  color: #00f4ff;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
 }
-.chat-box {
-    height: 400px;
-    overflow-y: auto;
-    background: #2c2c2c;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
+
+.subtitle {
+  font-size: 16px;
+  color: #4dd0e1;
+  margin-bottom: 30px;
 }
-.user, .bot {
-    margin: 10px 0;
+
+.chat-area {
+  margin-top: 20px;
 }
-input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
+
+.chat-response {
+  margin: 10px auto;
+  width: 100%;
+  max-width: 600px;
+  padding: 12px;
+  background: #061420;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #00f4ff55;
+  font-size: 16px;
+  text-align: left;
+  word-wrap: break-word;
+}
+
+#chat-input {
+  padding: 12px;
+  width: 90%;
+  max-width: 500px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 20px;
+  outline: none;
+  font-size: 16px;
+  background-color: #0f1b2d;
+  color: #aefeff;
+}
+
+button {
+  padding: 10px 20px;
+  margin-top: 10px;
+  margin-left: 5px;
+  border: 2px solid #00f4ff;
+  background-color: transparent;
+  color: #aefeff;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 14px;
+}
+
+button:hover {
+  background-color: #00f4ff33;
+  box-shadow: 0 0 10px #00f4ff;
+}
+
+.mic-wrapper {
+  margin: 40px auto;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(0, 255, 255, 0.05);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 0 30px #00f4ff88;
+}
+
+.mic-icon {
+  width: 60px;
+  filter: drop-shadow(0 0 10px #00f4ff);
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .header h1 {
+    font-size: 28px;
+  }
+  .subtitle {
+    font-size: 14px;
+  }
+  .mic-wrapper {
+    width: 100px;
+    height: 100px;
+  }
+  .mic-icon {
+    width: 50px;
+  }
+  button {
+    font-size: 13px;
+    padding: 8px 16px;
+  }
 }
