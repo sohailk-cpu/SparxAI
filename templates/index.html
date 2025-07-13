@@ -1,30 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SparxAI</title>
+  <title>TalkGPT</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>SparxAI</h1>
+  <h1>TalkGPT</h1>
   <p style="color: #ccc;">Try asking: "aaj kya din hai" or anything...</p>
 
   <div class="chat-area">
-    <div class="chat-response">Hello! How can I assist you?</div>
+    <div class="chat-response" id="chat-response">Hello! How can I assist you?</div>
     <input type="text" id="chat-input" placeholder="Type your message..." />
-    <button onclick="send()">Send</button>
+    <button onclick="sendMessage()">Send</button>
   </div>
 
-<div class="mic-wrapper">
-      <div class="mic-glow" onclick="startMic()" style="cursor: pointer;">
-      <img src="/static/images/mic-icon.png" class="mic-icon" alt="Mic">
-      </div>
-    </div>
-  </div>
+  <!-- 🔗 Buttons -->
+  <a href="/voice">
+    <button style="margin-top: 30px;">🎙️ Switch to Voice Mode</button>
+  </a>
 
   <a href="/login" style="color:#00f4ff; text-decoration: underline; display:block; margin-top:20px;">Login to Save Chat History</a>
   <a href="/history" style="color:#00f4ff; text-decoration: underline;">View My Chat History</a>
 
-  <script src="/static/script.js"></script>
+  <!-- ✅ JS for chat sending -->
+  <script>
+    function sendMessage() {
+      const msg = document.getElementById("chat-input").value.trim();
+      if (!msg) return;
+
+      const responseBox = document.getElementById("chat-response");
+      responseBox.innerText = "Thinking...";
+
+      fetch("/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message: msg })
+      })
+      .then(res => res.json())
+      .then(data => {
+        responseBox.innerText = data.response;
+      })
+      .catch(err => {
+        responseBox.innerText = "❌ Error reaching AI.";
+      });
+    }
+  </script>
 </body>
 </html>
