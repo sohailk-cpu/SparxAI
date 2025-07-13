@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-import requests, os, uuid, datetime
+import requests, os, uuid, datetime, json
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 
@@ -10,7 +10,41 @@ CORS(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-users = {'sohail': {'password': '12345'}}
+# ---------------------- User Storage ----------------------
+USERS_FILE = 'users.json'
+
+def load_users():
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_users(users_data):
+    with open(USERS_FILE, 'w') as f:
+        json.dump(users_data, f)
+
+users = load_users()
+
+# ---------------------- Flask-Login Setup ----------------------
+class User(UserMixin):
+    def __init__(self, username):
+        self.id = username
+
+@login_manager.user_loader
+def load_user(user_id):
+    file_users = load_users()
+    if user_id in file_users:
+        return User(user_id)
+    return None
+
+# ---------------------- Routes ----------------------
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/voice')
+def voice_chat():
+    return render_template('voice.html')
 
 @app.route('/signup', methods=['GET'])
 def signup_page():
@@ -22,34 +56,16 @@ def signup():
     username = data.get("username")
     password = data.get("password")
 
+    users = load_users()
     if username in users:
         return jsonify({"success": False, "error": "Username already exists"})
-    
+
     if not username or not password:
         return jsonify({"success": False, "error": "Username or password missing"})
 
     users[username] = {'password': password}
+    save_users(users)
     return jsonify({"success": True})
-
-class User(UserMixin):
-    def __init__(self, username):
-        self.id = username
-
-@login_manager.user_loader
-def load_user(user_id):
-    if user_id in users:
-        return User(user_id)
-    return None
-
-user_memory = {}
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/voice')
-def voice_chat():
-    return render_template('voice.html')
 
 @app.route('/login', methods=['GET'])
 def login_page():
@@ -60,10 +76,16 @@ def login():
     data = request.json
     username = data.get("username")
     password = data.get("password")
+
+    users = load_users()  # ✅ JSON file se fresh users laa raha hai
+
+    print("🔍 All users from file:", users)  # 🐞 Debug print
+
     if username in users and users[username]['password'] == password:
         user = User(username)
         login_user(user)
         return jsonify({"success": True})
+
     return jsonify({"success": False, "error": "Invalid credentials"})
 
 @app.route('/logout')
@@ -91,6 +113,9 @@ def chat():
     reply = get_groq_response(user_msg, user_id)
     return jsonify({'response': reply})
 
+# ---------------------- AI Response ----------------------
+user_memory = {}
+
 def get_groq_response(message, user_id):
     message = message.lower()
 
@@ -100,7 +125,7 @@ def get_groq_response(message, user_id):
 
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer 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",  # 👈 Apna API key yahan lagana
+        "Authorization": "Bearer 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",
         "Content-Type": "application/json"
     }
 
