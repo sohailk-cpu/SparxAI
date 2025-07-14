@@ -1,23 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>TalkGPT Voice Mode</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Mode - TalkGPT</title>
   <link rel="stylesheet" href="/static/style.css">
-<img src="/static/logo.png" alt="TalkGPT Logo" class="logo">
 </head>
 <body>
   <h2>🎙️ TalkGPT Voice Mode</h2>
-  <p>Speak your question and AI will respond by voice.</p>
+  <p>Speak or type your question below.</p>
 
-  <!-- 🎤 Mic area -->
   <div class="mic-wrapper" onclick="startVoiceChat()">
-    <img src="/static/images/mic-icon.png" class="mic-icon" alt="Mic">
+    <img src="/static/mic.svg" class="mic-icon">
   </div>
-  <p style="color: #aefeff; margin-top: 10px; font-size: 16px;">Tap to Talk</p>
+  <p id="status" style="margin-top:10px;">Tap to Talk</p>
 
-  <!-- 📥 AI reply -->
-  <div class="chat-response" id="responseBox">AI response will appear here...</div>
+  <input id="voice-input" placeholder="Or type here..." />
+  <button onclick="sendText()">Send</button>
 
   <script>
     function startVoiceChat() {
@@ -26,25 +23,33 @@
       recognition.start();
 
       recognition.onresult = function(event) {
-        const userInput = event.results[0][0].transcript;
-        fetch("/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userInput })
-        })
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById("responseBox").textContent = data.response;
-          speak(data.response);
-        });
+        const transcript = event.results[0][0].transcript;
+        document.getElementById("status").innerText = "You said: " + transcript;
+        sendToElevenLabs(transcript);
       };
     }
 
-    function speak(text) {
-      const synth = window.speechSynthesis;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'hi-IN';
-      synth.speak(utterance);
+    function sendText() {
+      const typed = document.getElementById("voice-input").value;
+      if (typed.trim() === "") return;
+      sendToElevenLabs(typed);
+    }
+
+    function sendToElevenLabs(text) {
+      fetch("http://127.0.0.1:5050/speak", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ text: text })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const audio = new Audio("/audio");
+          audio.play();
+        } else {
+          alert("❌ Voice failed: " + data.error);
+        }
+      });
     }
   </script>
 </body>
