@@ -1,67 +1,56 @@
-from flask import Flask, render_template, request, jsonify
-import requests, os, uuid
-from flask_cors import CORS
+from flask import Flask, request, jsonify, send_file
+import requests
+import os
 
-app = Flask(__name__, static_folder='static', template_folder='templates')
-CORS(app)
+app = Flask(__name__)
 
-@app.route('/voice')
-def voice_home():
-    return render_template('voice.html')
+ELEVENLABS_API_KEY = "sk-c3a9d12363dc718e73a610d853b3544c520be8c95c1adb67"
+VOICE_ID = "LQqGm0gT4pft0DECaryn"  # Hindi voice ID (change if needed)
 
-@app.route('/voice-chat', methods=['POST'])
-def voice_chat():
-    data = request.json
-    user_text = data.get('text')
+@app.route('/speak', methods=['POST'])
+def speak():
+    text = request.json.get('text', '')
+    
+    # Optional: Use Hindi script for better pronunciation
+    if not text.strip():
+        return jsonify({"error": "No text received"}), 400
 
-    # Send to Groq for text-based response
-    groq_headers = {
-        "Authorization": "Bearer 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",
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
+
+    headers = {
+        "xi-api-key": ELEVENLABS_API_KEY,
         "Content-Type": "application/json"
     }
 
-    groq_data = {
-        "model": "llama3-8b-8192",
-        "messages": [{"role": "user", "content": user_text}]
-    }
-
-    try:
-        groq_response = requests.post("https://api.groq.com/openai/v1/chat/completions",
-                                      headers=groq_headers, json=groq_data)
-        ai_text = groq_response.json()['choices'][0]['message']['content']
-    except Exception as e:
-        return jsonify({"error": "Groq Error", "message": str(e)})
-
-    # Send that response to ElevenLabs for voice
-    eleven_headers = {
-        "xi-api-key": "sk_c3a9d12363dc718e73a610d853b3544c520be8c95c1adb67",
-        "Content-Type": "application/json"
-    }
-
-    eleven_data = {
-        "text": ai_text,
+    data = {
+        "text": text,
+        "model_id": "eleven_multilingual_v2",
         "voice_settings": {
-            "stability": 0.5,
-            "similarity_boost": 0.75
+            "stability": 0.4,
+            "similarity_boost": 0.7
         }
     }
 
     try:
-        tts_response = requests.post(
-            "https://api.elevenlabs.io/v1/text-to-speech/LQqGm0gT4pft0DECaryn/stream",
-            headers=eleven_headers,
-            json=eleven_data
-        )
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code != 200:
+            print(response.text)
+            return jsonify({"error": "Failed to get audio"}), 500
 
-        if tts_response.status_code == 200:
-            with open("static/response.mp3", "wb") as f:
-                f.write(tts_response.content)
-            return jsonify({"success": True, "audio_url": "/static/response.mp3"})
-        else:
-            return jsonify({"error": "TTS failed", "details": tts_response.text})
+        audio_path = os.path.join("static", "voice.mp3")
+        with open(audio_path, "wb") as f:
+            f.write(response.content)
 
+        return jsonify({"success": True})
+    
     except Exception as e:
-        return jsonify({"error": "TTS error", "message": str(e)})
+        print("❌ Error:", e)
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route('/audio')
+def audio():
+    return send_file("static/voice.mp3", mimetype="audio/mpeg")
+
+if __name__ == "__main__":
+    app.run(port=5050)
+    
