@@ -1,56 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Voice Mode - TalkGPT</title>
+  <title>TalkGPT Voice Mode</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h2>🎙️ TalkGPT Voice Mode</h2>
-  <p>Speak or type your question below.</p>
 
-  <div class="mic-wrapper" onclick="startVoiceChat()">
-    <img src="/static/mic.svg" class="mic-icon">
-  </div>
-  <p id="status" style="margin-top:10px;">Tap to Talk</p>
+<h1>🎤 TalkGPT - Voice Assistant</h1>
+<p>Tap the mic and speak...</p>
 
-  <input id="voice-input" placeholder="Or type here..." />
-  <button onclick="sendText()">Send</button>
+<div class="mic-wrapper">
+  <img src="/static/mic.svg" class="mic-icon" onclick="startVoiceChat()" />
+</div>
 
-  <script>
-    function startVoiceChat() {
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = "hi-IN";
-      recognition.start();
+ <div class="chat-response" id="responseBox">AI response will appear here...</div>
+<p id="voice-response">Your AI response will appear here...</p>
 
-      recognition.onresult = function(event) {
-        const transcript = event.results[0][0].transcript;
-        document.getElementById("status").innerText = "You said: " + transcript;
-        sendToElevenLabs(transcript);
-      };
-    }
+<audio id="audio" autoplay></audio>
 
-    function sendText() {
-      const typed = document.getElementById("voice-input").value;
-      if (typed.trim() === "") return;
-      sendToElevenLabs(typed);
-    }
+<a href="/">
+  <button>Switch to Chat Mode</button>
+</a>
 
-    function sendToElevenLabs(text) {
-      fetch("http://127.0.0.1:5050/speak", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ text: text })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          const audio = new Audio("/audio");
-          audio.play();
-        } else {
-          alert("❌ Voice failed: " + data.error);
-        }
-      });
-    }
-  </script>
+<script src="/static/script.js"></script>
 </body>
 </html>
