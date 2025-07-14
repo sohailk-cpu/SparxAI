@@ -1,33 +1,35 @@
-<input type="text" id="chat-input" placeholder="Type here..." />
-<button onclick="send()">Send</button>
+function startVoiceChat() {
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = "hi-IN";
+  recognition.start();
 
-<div class="chat-area"></div>
+  recognition.onresult = function (event) {
+    const transcript = event.results[0][0].transcript;
+    document.getElementById("voice-response").innerText = "Thinking...";
 
-<script>
-  function send() {
-    const inputElement = document.getElementById("chat-input");
-    const input = inputElement.value.trim();
-    if (input === "") return;
+    fetch("/voice-chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: transcript })
+    })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("voice-response").innerText = data.response;
+        speakText(data.response); // 🔊 ElevenLabs voice
+      });
+  };
+}
 
-    const chat = document.createElement("div");
-    chat.className = "chat-response";
-    chat.textContent = "You said: " + input;
-    document.querySelector(".chat-area").appendChild(chat);
-
-    inputElement.value = "";  // ✅ Clear input
-  }
-
-fetch("/voice-chat", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ text: transcript }) // transcript = mic से लिया गया input
-})
-.then(res => res.json())
-.then(data => {
-  if (data.audio_url) {
-    const audio = new Audio(data.audio_url);
-    audio.play();
-  }
-});
-
-</script>
+function speakText(text) {
+  fetch("/speak", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  })
+    .then(res => res.blob())
+    .then(blob => {
+      const audio = document.getElementById("audio");
+      audio.src = URL.createObjectURL(blob);
+      audio.play();
+    });
+}
