@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 import requests, os, uuid, datetime, json
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
+from io import BytesIO
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = 'super-secret-key'
@@ -10,66 +11,61 @@ CORS(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-# ---------------------- User Storage ----------------------
+users = {}
+user_memory = {}
+
 USERS_FILE = 'users.json'
 
-def load_users():
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, 'r') as f:
-            return json.load(f)
-    return {}
+# 🔄 Load saved users
+if os.path.exists(USERS_FILE):
+    with open(USERS_FILE, 'r') as f:
+        users = json.load(f)
 
-def save_users(users_data):
-    with open(USERS_FILE, 'w') as f:
-        json.dump(users_data, f)
-
-users = load_users()
-
-# ---------------------- Flask-Login Setup ----------------------
+# 🔐 User class
 class User(UserMixin):
     def __init__(self, username):
         self.id = username
 
 @login_manager.user_loader
 def load_user(user_id):
-    file_users = load_users()
-    if user_id in file_users:
+    if user_id in users:
         return User(user_id)
     return None
 
-# ---------------------- Routes ----------------------
+# 🔹 Pages
 @app.route('/')
 def home():
     return render_template('index.html')
 
 @app.route('/voice')
-def voice_chat():
+def voice_page():
     return render_template('voice.html')
 
-@app.route('/signup', methods=['GET'])
+@app.route('/login')
+def login_page():
+    return render_template('login.html')
+
+@app.route('/signup')
 def signup_page():
     return render_template('signup.html')
 
+# 🔹 Auth
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.json
     username = data.get("username")
     password = data.get("password")
 
-    users = load_users()
+    if not username or not password:
+        return jsonify({"success": False, "error": "Missing username or password"})
+
     if username in users:
         return jsonify({"success": False, "error": "Username already exists"})
 
-    if not username or not password:
-        return jsonify({"success": False, "error": "Username or password missing"})
-
-    users[username] = {'password': password}
-    save_users(users)
+    users[username] = {"password": password}
+    with open(USERS_FILE, 'w') as f:
+        json.dump(users, f)
     return jsonify({"success": True})
-
-@app.route('/login', methods=['GET'])
-def login_page():
-    return render_template('login.html')
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -77,15 +73,9 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
-    users = load_users()  # ✅ JSON file se fresh users laa raha hai
-
-    print("🔍 All users from file:", users)  # 🐞 Debug print
-
     if username in users and users[username]['password'] == password:
-        user = User(username)
-        login_user(user)
+        login_user(User(username))
         return jsonify({"success": True})
-
     return jsonify({"success": False, "error": "Invalid credentials"})
 
 @app.route('/logout')
@@ -94,6 +84,7 @@ def logout():
     logout_user()
     return redirect(url_for("home"))
 
+# 🔹 History
 @app.route('/history')
 @login_required
 def history():
@@ -101,25 +92,29 @@ def history():
     history = user_memory.get(user_id, [])
     return render_template("history.html", history=history)
 
+# 🔹 Chat (Text only)
 @app.route('/chat', methods=['POST'])
 def chat():
     user_msg = request.json.get('message', '')
-    if current_user.is_authenticated:
-        user_id = current_user.id
-    else:
-        user_id = session.get('user_id') or str(uuid.uuid4())
-        session['user_id'] = user_id
-
+    user_id = current_user.id if current_user.is_authenticated else session.get('user_id') or str(uuid.uuid4())
+    session['user_id'] = user_id
     reply = get_groq_response(user_msg, user_id)
     return jsonify({'response': reply})
 
-# ---------------------- AI Response ----------------------
-user_memory = {}
+# 🔹 Voice Chat (From mic)
+@app.route('/voice-chat', methods=['POST'])
+def voice_chat():
+    user_msg = request.json.get('message', '')
+    user_id = session.get('user_id') or str(uuid.uuid4())
+    session['user_id'] = user_id
+    reply = get_groq_response(user_msg, user_id)
+    return jsonify({'response': reply})
 
+# 🔹 AI Response
 def get_groq_response(message, user_id):
     message = message.lower()
 
-    if any(word in message for word in ["date", "day today", "aaj ka din", "aaj kya din", "aaj kya hai", "today date", "what day today"]):
+    if any(word in message for word in ["date", "day today", "aaj ka din", "aaj kya din", "today date", "what day today"]):
         now = datetime.datetime.now()
         return f"Aaj ka din hai: {now.strftime('%A, %d %B %Y')}"
 
@@ -138,13 +133,10 @@ def get_groq_response(message, user_id):
     }
 
     try:
-        response = requests.post(url, headers=headers, json=data, timeout=10)
-        result = response.json()
-        print("🔍 Groq response:", result)
-
+        res = requests.post(url, headers=headers, json=data)
+        result = res.json()
         if "choices" not in result:
             return "⚠️ AI response not received. Check your API key."
-
         content = result['choices'][0]['message']['content']
         memory.append({"role": "assistant", "content": content})
         user_memory[user_id] = memory
@@ -153,5 +145,36 @@ def get_groq_response(message, user_id):
         print("❌ Error:", e)
         return "Sorry, I couldn't connect to the AI service."
 
+# 🔊 Voice Speak (ElevenLabs)
+@app.route('/speak', methods=['POST'])
+def speak():
+    text = request.json.get("text", "")
+    eleven_api_key = os.getenv("ELEVEN_API_KEY") or "sk-c3a9d12363dc718e73a610d853b3544c520be8c95c1adb67"
+    voice_id = "LQqGm0gT4pft0DECaryn"
+
+    try:
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+        headers = {
+            "xi-api-key": eleven_api_key,
+            "Content-Type": "application/json"
+        }
+        data = {
+            "text": text,
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {
+                "stability": 0.4,
+                "similarity_boost": 0.7
+            }
+        }
+
+        res = requests.post(url, headers=headers, json=data)
+        if res.status_code != 200:
+            return jsonify({"error": "Voice generation failed"}), 500
+        return send_file(BytesIO(res.content), mimetype="audio/mpeg")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# 🔄 Run
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
