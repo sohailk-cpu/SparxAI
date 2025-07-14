@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>TalkGPT</title>
+  <title>TalkGPT - Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/static/style.css">
-<img src="/static/logo.png" class="logo" alt="TalkGPT Logo">
 </head>
 <body>
   <h1>TalkGPT</h1>
-  <p style="color: #ccc;">Try asking: "aaj kya din hai" or anything...</p>
+  <p style="color:#ccc;">Type something like: "aaj kaun sa din hai"</p>
 
   <div class="chat-area">
     <div class="chat-response" id="chat-response">Hello! How can I assist you?</div>
@@ -16,15 +15,11 @@
     <button onclick="sendMessage()">Send</button>
   </div>
 
-  <!-- 🔗 Buttons -->
-  <a href="/voice">
-    <button style="margin-top: 30px;">🎙️ Switch to Voice Mode</button>
-  </a>
 
-  <a href="/login" style="color:#00f4ff; text-decoration: underline; display:block; margin-top:20px;">Login to Save Chat History</a>
-  <a href="/history" style="color:#00f4ff; text-decoration: underline;">View My Chat History</a>
+  <a href="/voice"><button style="margin-top:20px;">🎙️ Switch to Voice Mode</button></a>
+  <a href="/login">🔐 Login</a> | <a href="/signup">Sign Up</a> | <a href="/history">History</a>
 
-  <!-- ✅ JS for chat sending -->
+<!-- ✅ JS for chat sending -->
  <script>
   function sendMessage() {
     const inputBox = document.getElementById("chat-input");
