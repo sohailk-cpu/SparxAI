@@ -16,4 +16,18 @@
 
     inputElement.value = "";  // ✅ Clear input
   }
+
+fetch("/voice-chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ text: transcript }) // transcript = mic से लिया गया input
+})
+.then(res => res.json())
+.then(data => {
+  if (data.audio_url) {
+    const audio = new Audio(data.audio_url);
+    audio.play();
+  }
+});
+
 </script>
