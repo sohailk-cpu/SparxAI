@@ -4,6 +4,7 @@
   <title>TalkGPT</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/static/style.css">
+<img src="/static/logo.png" class="logo" alt="TalkGPT Logo">
 </head>
 <body>
   <h1>TalkGPT</h1>
@@ -24,29 +25,33 @@
   <a href="/history" style="color:#00f4ff; text-decoration: underline;">View My Chat History</a>
 
   <!-- ✅ JS for chat sending -->
-  <script>
-    function sendMessage() {
-      const msg = document.getElementById("chat-input").value.trim();
-      if (!msg) return;
+ <script>
+  function sendMessage() {
+    const inputBox = document.getElementById("chat-input");
+    const msg = inputBox.value.trim();
 
-      const responseBox = document.getElementById("chat-response");
-      responseBox.innerText = "Thinking...";
+    if (!msg) return;
 
-      fetch("/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ message: msg })
-      })
-      .then(res => res.json())
-      .then(data => {
-        responseBox.innerText = data.response;
-      })
-      .catch(err => {
-        responseBox.innerText = "❌ Error reaching AI.";
-      });
-    }
-  </script>
+    const responseBox = document.getElementById("chat-response");
+    responseBox.innerText = "Thinking...";
+
+    inputBox.value = "";  // ✅ Input clear kar diya yahan
+
+    fetch("/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message: msg })
+    })
+    .then(res => res.json())
+    .then(data => {
+      responseBox.innerText = data.response;
+    })
+    .catch(err => {
+      responseBox.innerText = "❌ Error reaching AI.";
+    });
+  }
+</script>
 </body>
 </html>
