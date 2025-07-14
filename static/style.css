@@ -7,6 +7,14 @@ body {
   text-align: center;
 }
 
+.logo {
+  width: 120px;       /* ya 100px if too big */
+  height: auto;
+  margin: 20px auto;   /* center + spacing */
+  display: block;
+  border-radius: 10px; /* optional round edges */
+}
+
 .container {
   padding-top: 60px;
   padding-left: 15px;
